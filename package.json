@@ -1,0 +1,90 @@
+{
+  "name": "fitlokal-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.ts",
+  "scripts": {
+    "prepare": "husky",
+    "precommit": "lint-staged && npm run build",
+    "lint": "eslint src scripts --max-warnings=0",
+    "lint:fix": "eslint src scripts --fix --max-warnings=0",
+    "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.ts\"",
+    "build": "tsc -p .",
+    "dev": "cross-env DEBUG='dev' tsnd --respawn --files src/app.ts",
+    "dev:register": "cross-env DEBUG='dev' node -r ts-node/register -r ./src/tracing.ts ./src/app.ts",
+    "dev:register:custom": "cross-env HONEYCOMB_API_KEY=$HONEYCOMB_API_KEY OTEL_SERVICE_NAME=$OTEL_SERVICE_NAME DEBUG='dev' node -r ts-node/register -r ./src/tracing.ts ./src/app.ts",
+    "migrate": "sequelize-cli db:migrate --config sequelize.config.js",
+    "migrate:undo": "sequelize-cli db:migrate:undo --config sequelize.config.js",
+    "migrate:status": "sequelize-cli db:migrate:status --config sequelize.config.js",
+    "migration:generate": "sequelize-cli migration:generate --migrations-path migrations",
+    "seed": "sequelize-cli db:seed:all --config sequelize.config.js",
+    "seed:undo": "sequelize-cli db:seed:undo --config sequelize.config.js",
+    "seed:undo:all": "sequelize-cli db:seed:undo:all --config sequelize.config.js",
+    "start": "node dist/src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "seed:demo": "npm run seed",
+    "seeder:generate": "sequelize-cli seed:generate --seeders-path seeders"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "scripts/**/*.{ts,tsx}": [
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "migrations/**/*.js": [
+      "prettier --write"
+    ],
+    "seeders/**/*.js": [
+      "prettier --write"
+    ],
+    "*.{json,md}": "prettier --write"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.67.3",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.208.0",
+    "@opentelemetry/sdk-node": "^0.208.0",
+    "compression": "^1.8.0",
+    "cors": "^2.8.5",
+    "debug": "^4.4.1",
+    "dotenv": "^16.5.0",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^7.1.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.0",
+    "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.4",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/express-rate-limit": "^5.1.3",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "*",
+    "@types/uuid": "^9.0.8",
+    "cross-env": "^7.0.3",
+    "eslint": "^9.12.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.3.3",
+    "sequelize-cli": "^6.6.5",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.59.0"
+  }
+}

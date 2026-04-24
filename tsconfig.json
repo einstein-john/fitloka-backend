@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "module": "CommonJS",
+    "esModuleInterop": true,
+    "target": "ES2018",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "dist",
+    "typeRoots": [
+      "./node_modules/@types",
+      "./@types"
+    ],
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "lib": ["ES2018"]
+  },
+  "exclude": ["node_modules", "dist/**/*"]
+}
