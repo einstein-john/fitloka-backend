@@ -1,0 +1,1000 @@
+openapi: 3.0.3
+info:
+  title: Fitlokal Clothing Store API
+  description: |
+    E-commerce backend for Fitlokal. Most routes require an **API key** (`x-api-key`) and many also require a **JWT** (`Authorization: Bearer <token>`).
+
+    **Auth flow:** `POST /auth/register` or `POST /auth/login` → use returned `token` with `Authorization: Bearer ...` on protected routes.  
+    **API key:** create or use an `applications` row (e.g. from seeders); send `x-api-key` on every request except pure `/auth/*` and public `/` / `robots.txt`.
+
+    Admin-only actions require `users.isAdmin === true` on the JWT user.
+  version: 1.0.0
+
+servers:
+  - url: "{baseUrl}"
+    variables:
+      baseUrl:
+        default: http://localhost:3000
+        description: API base URL (no trailing slash)
+
+tags:
+  - name: System
+  - name: Auth
+  - name: Applications
+  - name: Users
+  - name: Categories
+  - name: Products
+  - name: Inventory
+  - name: Cart
+  - name: Orders
+  - name: Payments
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Client application key from `applications.apiKey`
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT from `POST /auth/login` or `POST /auth/register`
+
+  schemas:
+    ApiMessage:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+
+    ApiEnvelope:
+      type: object
+      properties:
+        message:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+      required: [message]
+
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Validation error.
+        data:
+          type: object
+          properties:
+            error:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          minLength: 2
+          maxLength: 64
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+        firstName:
+          type: string
+          maxLength: 128
+          nullable: true
+        lastName:
+          type: string
+          maxLength: 128
+          nullable: true
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+
+    AuthTokenResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelope"
+      example:
+        message: Login successful
+        data:
+          token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          user:
+            id: 1
+            username: shopper
+            email: shopper@fitlokal.dev
+
+    ApplicationCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: Unique application name; server generates `apiKey`
+
+    CategoryCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        slug:
+          type: string
+          description: Optional; generated from name if omitted
+
+    CategoryUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        slug:
+          type: string
+
+    ProductCreate:
+      type: object
+      required: [categoryId, name, sku, price]
+      properties:
+        categoryId:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+          nullable: true
+        price:
+          type: number
+          format: float
+          exclusiveMinimum: 0
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        initialStock:
+          type: integer
+          minimum: 0
+          default: 0
+
+    ProductUpdate:
+      type: object
+      properties:
+        categoryId:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+          nullable: true
+        price:
+          type: number
+          format: float
+          exclusiveMinimum: 0
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+
+    ProductAttachImage:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          format: uri
+          maxLength: 2048
+        altText:
+          type: string
+          maxLength: 500
+          nullable: true
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
+        isPrimary:
+          type: boolean
+          default: false
+
+    InventoryPatch:
+      type: object
+      required: [stock]
+      properties:
+        stock:
+          type: integer
+          minimum: 0
+
+    CartAddItem:
+      type: object
+      required: [productId]
+      properties:
+        productId:
+          type: integer
+          minimum: 1
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+
+    CartItemQuantity:
+      type: object
+      required: [quantity]
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+
+    PaymentCheckout:
+      type: object
+      required: [orderId]
+      properties:
+        orderId:
+          type: integer
+          minimum: 1
+
+    PaymentWebhook:
+      type: object
+      required: [orderId]
+      properties:
+        orderId:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [completed, pending, failed]
+
+    UserUpdate:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        enabled:
+          type: boolean
+          nullable: true
+        isAdmin:
+          type: boolean
+          nullable: true
+        profilePicture:
+          type: string
+          format: uri
+          nullable: true
+
+paths:
+  /:
+    get:
+      tags: [System]
+      summary: Service info
+      security: []
+      responses:
+        "200":
+          description: Welcome payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+
+  /favicon.ico:
+    get:
+      tags: [System]
+      summary: Favicon placeholder
+      security: []
+      responses:
+        "204":
+          description: No content
+
+  /robots.txt:
+    get:
+      tags: [System]
+      summary: robots.txt
+      security: []
+      responses:
+        "200":
+          description: Plain text robots rules
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Registered; returns token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokenResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "409":
+          description: Email or username conflict
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: JWT issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokenResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Invalid credentials or disabled user
+
+  /auth/login/magic-link:
+    get:
+      tags: [Auth]
+      summary: Exchange magic-link JWT for session JWT
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokenResponse"
+        "400":
+          description: Validation error
+
+  /applications:
+    post:
+      tags: [Applications]
+      summary: Create application (generates API key)
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+    get:
+      tags: [Applications]
+      summary: List active applications
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+
+  /applications/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Applications]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+    put:
+      tags: [Applications]
+      summary: Update application (e.g. name)
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+    delete:
+      tags: [Applications]
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Current user profile (password omitted)
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+        "401":
+          description: Missing or invalid token
+
+  /users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Users]
+      summary: Get user by id (self or admin)
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+        "403":
+          description: Access denied
+    put:
+      tags: [Users]
+      summary: Update user (self or admin); hash password if provided
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+    delete:
+      tags: [Users]
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+
+  /categories:
+    get:
+      tags: [Categories]
+      summary: List categories
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+    post:
+      tags: [Categories]
+      summary: Create category (admin)
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryCreate"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+        "403":
+          description: Admin required
+
+  /categories/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Categories]
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+    put:
+      tags: [Categories]
+      summary: Update category (admin)
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryUpdate"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+    delete:
+      tags: [Categories]
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+
+  /products:
+    get:
+      tags: [Products]
+      summary: List products (paginated)
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: items, total, page, limit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+    post:
+      tags: [Products]
+      summary: Create product + inventory (admin)
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductCreate"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+
+  /products/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Products]
+      summary: Get product (includes category, inventory, images)
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+    put:
+      tags: [Products]
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+    delete:
+      tags: [Products]
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+
+  /products/{id}/images:
+    post:
+      tags: [Products]
+      summary: Link image URL to product (admin); dedupes by global image URL
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductAttachImage"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+
+  /products/{id}/images/{productImageId}:
+    delete:
+      tags: [Products]
+      summary: Remove product–image link (admin); `productImageId` is `product_images.id`
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: productImageId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+
+  /inventory/{productId}:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Inventory]
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+    patch:
+      tags: [Inventory]
+      summary: Set stock level (admin)
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryPatch"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+
+  /cart:
+    get:
+      tags: [Cart]
+      summary: Get or create active cart with items
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+    post:
+      tags: [Cart]
+      summary: Add line item to cart
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CartAddItem"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+
+  /cart/items/{itemId}:
+    parameters:
+      - name: itemId
+        in: path
+        required: true
+        schema:
+          type: integer
+    patch:
+      tags: [Cart]
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CartItemQuantity"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+    delete:
+      tags: [Cart]
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+
+  /orders:
+    post:
+      tags: [Orders]
+      summary: Create order from current user's active cart
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+    get:
+      tags: [Orders]
+      summary: List orders for current user
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+
+  /orders/{id}:
+    get:
+      tags: [Orders]
+      summary: Get order by id (owner)
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+
+  /payments/checkout:
+    post:
+      tags: [Payments]
+      summary: Run checkout for an order (stub provider completes immediately)
+      description: |
+        Mount uses **API key** only; this route adds **JWT** in code.  
+        Creates/updates `payments`, sets order `PAID`, decrements inventory when status is completed.
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentCheckout"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+
+  /payments/webhook:
+    post:
+      tags: [Payments]
+      summary: Stub webhook (API key only; no JWT)
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentWebhook"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
