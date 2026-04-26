@@ -175,7 +175,8 @@ components:
         price:
           type: number
           format: float
-          exclusiveMinimum: 0
+          minimum: 0
+          exclusiveMinimum: true
         status:
           type: string
           enum: [ACTIVE, INACTIVE]
@@ -200,7 +201,8 @@ components:
         price:
           type: number
           format: float
-          exclusiveMinimum: 0
+          minimum: 0
+          exclusiveMinimum: true
         status:
           type: string
           enum: [ACTIVE, INACTIVE]
@@ -402,6 +404,7 @@ paths:
             type: string
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -435,6 +438,7 @@ paths:
         - ApiKeyAuth: []
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -453,6 +457,7 @@ paths:
         - ApiKeyAuth: []
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -472,6 +477,7 @@ paths:
                   type: string
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -482,6 +488,7 @@ paths:
         - ApiKeyAuth: []
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -496,6 +503,7 @@ paths:
           BearerAuth: []
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -518,6 +526,7 @@ paths:
           BearerAuth: []
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -537,6 +546,7 @@ paths:
               $ref: "#/components/schemas/UserUpdate"
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -548,6 +558,7 @@ paths:
           BearerAuth: []
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -577,6 +588,7 @@ paths:
             default: 10
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -595,6 +607,7 @@ paths:
               $ref: "#/components/schemas/CategoryCreate"
       responses:
         "201":
+          description: Created
           content:
             application/json:
               schema:
@@ -616,6 +629,7 @@ paths:
           BearerAuth: []
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -633,6 +647,7 @@ paths:
               $ref: "#/components/schemas/CategoryUpdate"
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -644,6 +659,7 @@ paths:
           BearerAuth: []
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -694,6 +710,7 @@ paths:
               $ref: "#/components/schemas/ProductCreate"
       responses:
         "201":
+          description: Created
           content:
             application/json:
               schema:
@@ -714,6 +731,7 @@ paths:
           BearerAuth: []
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -730,6 +748,7 @@ paths:
               $ref: "#/components/schemas/ProductUpdate"
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -741,6 +760,7 @@ paths:
           BearerAuth: []
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -767,6 +787,7 @@ paths:
               $ref: "#/components/schemas/ProductAttachImage"
       responses:
         "201":
+          description: Created
           content:
             application/json:
               schema:
@@ -792,6 +813,7 @@ paths:
             type: integer
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -811,6 +833,7 @@ paths:
           BearerAuth: []
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -829,6 +852,7 @@ paths:
               $ref: "#/components/schemas/InventoryPatch"
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -843,6 +867,7 @@ paths:
           BearerAuth: []
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -861,6 +886,7 @@ paths:
               $ref: "#/components/schemas/CartAddItem"
       responses:
         "201":
+          description: Created
           content:
             application/json:
               schema:
@@ -886,6 +912,7 @@ paths:
               $ref: "#/components/schemas/CartItemQuantity"
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -897,6 +924,7 @@ paths:
           BearerAuth: []
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -911,6 +939,7 @@ paths:
           BearerAuth: []
       responses:
         "201":
+          description: Created
           content:
             application/json:
               schema:
@@ -932,6 +961,7 @@ paths:
             type: integer
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -952,6 +982,7 @@ paths:
             type: integer
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -975,6 +1006,7 @@ paths:
               $ref: "#/components/schemas/PaymentCheckout"
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:
@@ -994,6 +1026,7 @@ paths:
               $ref: "#/components/schemas/PaymentWebhook"
       responses:
         "200":
+          description: Success
           content:
             application/json:
               schema:

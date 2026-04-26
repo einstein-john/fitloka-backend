@@ -1,7 +1,3 @@
-// IMPORTANT: Import tracing FIRST before any other modules
-// This ensures OpenTelemetry instrumentation is set up before any code runs
-import "./tracing";
-
 import helmet from "helmet";
 import express from "express";
 import compression from "compression";
