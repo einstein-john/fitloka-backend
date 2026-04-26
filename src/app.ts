@@ -32,6 +32,7 @@ class App {
   }
 
   private initializeMiddlewaresAndRoutes() {
+    this.app.set("trust proxy", serverConfig.TRUST_PROXY);
     this.app.use(compression());
 
     // Bot protection middleware - apply early

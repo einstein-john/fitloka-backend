@@ -22,6 +22,7 @@ const envSchema = Joi.object()
     DB_SYNC: Joi.boolean().default(false),
     JWT_SECRET: Joi.string().required(),
     JWT_EXPIRES_IN: Joi.string().default("7d"),
+    TRUST_PROXY: Joi.alternatives().try(Joi.boolean(), Joi.number().integer().min(0), Joi.string()),
     RATE_LIMIT_WINDOW_MS: Joi.number().default(15 * 60 * 1000),
     RATE_LIMIT_MAX_REQUESTS: Joi.number().default(300),
     AUTH_RATE_LIMIT_WINDOW_MS: Joi.number().default(15 * 60 * 1000),
@@ -71,6 +72,8 @@ class ServerConfig {
     AUTH_WINDOW_MS: environmentConfig.AUTH_RATE_LIMIT_WINDOW_MS,
     AUTH_MAX_REQUESTS: environmentConfig.AUTH_RATE_LIMIT_MAX_REQUESTS,
   };
+
+  public TRUST_PROXY = environmentConfig.TRUST_PROXY ?? false;
 }
 
 export default new ServerConfig();
