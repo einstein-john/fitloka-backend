@@ -4,7 +4,6 @@ import compression from "compression";
 import { Application } from "express";
 import cors, { CorsOptions } from "cors";
 import serverConfig from "./config/server.config";
-import { NodeEnvOptions } from "./config/constants";
 import database from "./database";
 import routes from "./routes";
 import systemMiddleware from "./middlewares/system.middleware";
@@ -21,10 +20,36 @@ class App {
   constructor() {
     this.app = express();
     this.port = serverConfig.NODE.PORT;
-    this.corsOptions = {
-      origin: serverConfig.ALLOWED_ORIGINS,
-    };
+    this.corsOptions = this.buildCorsOptions();
     this.initializeMiddlewaresAndRoutes();
+  }
+
+  private buildCorsOptions(): CorsOptions {
+    const allowed = serverConfig.ALLOWED_ORIGINS.map((o) => o.trim()).filter(Boolean);
+    const allowAny = allowed.length === 0 || allowed.includes("*");
+
+    return {
+      origin(origin, callback) {
+        if (allowAny) {
+          callback(null, true);
+          return;
+        }
+        if (!origin) {
+          callback(null, true);
+          return;
+        }
+        if (allowed.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+        serverConfig.DEBUG(`CORS rejected origin: ${origin}; allowed: ${allowed.join(", ")}`);
+        callback(null, false);
+      },
+      methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization", "x-api-key", "X-API-Key"],
+      optionsSuccessStatus: 204,
+      maxAge: 86400,
+    };
   }
 
   private async initializeDatabase() {
@@ -39,15 +64,15 @@ class App {
     this.app.use(botProtectionMiddleware.addSecurityHeaders);
     this.app.use(botProtectionMiddleware.logSuspiciousActivity);
 
-    if (serverConfig.NODE.ENV === NodeEnvOptions.PRODUCTION) {
-      this.app.use(cors(this.corsOptions));
-    } else {
-      this.app.use(cors());
-    }
+    this.app.use(cors(this.corsOptions));
     this.app.use(express.json({ limit: "2048mb" }));
     this.app.use(express.urlencoded({ extended: true, limit: "2048mb" }));
 
-    this.app.use(helmet());
+    this.app.use(
+      helmet({
+        crossOriginResourcePolicy: { policy: "cross-origin" },
+      })
+    );
     this.app.use(systemMiddleware.requestLogger);
     this.app.use(rateLimitMiddleware.general);
 
