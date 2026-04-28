@@ -340,7 +340,7 @@ paths:
   /auth/register:
     post:
       tags: [Auth]
-      summary: Register user
+      summary: Register user (email confirmation required)
       security: []
       requestBody:
         required: true
@@ -363,6 +363,27 @@ paths:
                 $ref: "#/components/schemas/ValidationError"
         "409":
           description: Email or username conflict
+
+  /auth/register/confirm-email:
+    get:
+      tags: [Auth]
+      summary: Confirm account email using verification token
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Email confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+        "400":
+          description: Validation error
 
   /auth/login:
     post:
@@ -409,6 +430,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthTokenResponse"
+        "400":
+          description: Validation error
+
+  /auth/login/magic-link/request:
+    post:
+      tags: [Auth]
+      summary: Send a magic-link email via Resend
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: Always returns success message to avoid email enumeration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
         "400":
           description: Validation error
 

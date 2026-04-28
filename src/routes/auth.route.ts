@@ -37,6 +37,18 @@ class AuthRoute extends AuthController {
       this.validateMagicLink,
       this.loginWithMagicLink
     );
+    this.router.post(
+      "/login/magic-link/request",
+      rateLimitMiddleware.auth,
+      this.validateMagicLinkRequest,
+      this.requestMagicLink
+    );
+    this.router.get(
+      "/register/confirm-email",
+      rateLimitMiddleware.auth,
+      this.validateEmailConfirmation,
+      this.confirmEmail
+    );
   }
 
   private validateMagicLink = (
@@ -45,6 +57,50 @@ class AuthRoute extends AuthController {
     next: NextFunction
   ): void => {
     const { error } = this.loginSchema.validateMagicLink(req);
+    if (error) {
+      const errorResponse: ApiValidationErrorResponse = {
+        message: "Validation error.",
+        data: {
+          error: error.details.map((detail) => ({
+            field: detail.path.join("."),
+            message: detail.message,
+          })),
+        },
+      };
+      res.status(400).json(errorResponse);
+      return;
+    }
+    next();
+  };
+
+  private validateMagicLinkRequest = (
+    req: Request,
+    res: Response<ApiValidationErrorResponse>,
+    next: NextFunction
+  ): void => {
+    const { error } = this.loginSchema.validateMagicLinkRequest(req);
+    if (error) {
+      const errorResponse: ApiValidationErrorResponse = {
+        message: "Validation error.",
+        data: {
+          error: error.details.map((detail) => ({
+            field: detail.path.join("."),
+            message: detail.message,
+          })),
+        },
+      };
+      res.status(400).json(errorResponse);
+      return;
+    }
+    next();
+  };
+
+  private validateEmailConfirmation = (
+    req: Request,
+    res: Response<ApiValidationErrorResponse>,
+    next: NextFunction
+  ): void => {
+    const { error } = this.registerSchema.validateEmailConfirmation(req);
     if (error) {
       const errorResponse: ApiValidationErrorResponse = {
         message: "Validation error.",

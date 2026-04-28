@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { Request } from "express";
 import { BaseSchema } from "./base.schema";
 
 export class RegisterSchema extends BaseSchema {
@@ -10,5 +11,11 @@ export class RegisterSchema extends BaseSchema {
       firstName: Joi.string().max(128).allow(null, "").optional(),
       lastName: Joi.string().max(128).allow(null, "").optional(),
     });
+  }
+
+  public validateEmailConfirmation(req: Request) {
+    return Joi.object({
+      token: Joi.string().required(),
+    }).validate(req.query);
   }
 }

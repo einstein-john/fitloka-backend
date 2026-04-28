@@ -19,7 +19,7 @@ export default class AuthController {
         lastName,
       });
       res.status(201).json({
-        message: "Registration successful",
+        message: "Registration successful. Please confirm your email.",
         data: { token, user: authService.sanitizeUser(user) },
       });
     } catch (error) {
@@ -67,6 +67,45 @@ export default class AuthController {
       });
     } catch (error) {
       serverConfig.DEBUG(`Error during magic link login: ${JSON.stringify(error)}`);
+      next(error);
+    }
+  }
+
+  protected async requestMagicLink(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { email } = req.body as { email: string };
+      await authService.requestMagicLink(email);
+      res.status(200).json({
+        message: "If that email exists, a magic link has been sent",
+        data: {},
+      });
+    } catch (error) {
+      serverConfig.DEBUG(`Error requesting magic link: ${JSON.stringify(error)}`);
+      next(error);
+    }
+  }
+
+  protected async confirmEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const token = typeof req.query.token === "string" ? req.query.token : undefined;
+      if (!token) {
+        res.status(400).json({
+          message: "Token is required",
+          data: {},
+        });
+        return;
+      }
+      await authService.confirmEmail(token);
+      res.status(200).json({
+        message: "Email confirmed successfully",
+        data: {},
+      });
+    } catch (error) {
+      serverConfig.DEBUG(`Error confirming email: ${JSON.stringify(error)}`);
       next(error);
     }
   }

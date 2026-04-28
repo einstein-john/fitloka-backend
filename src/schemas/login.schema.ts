@@ -15,4 +15,10 @@ export class LoginSchema extends BaseSchema {
       token: Joi.string().required(),
     }).validate(req.query);
   }
+
+  public validateMagicLinkRequest(req: Request) {
+    return Joi.object({
+      email: Joi.string().email().required(),
+    }).validate(req.body);
+  }
 }

@@ -28,6 +28,10 @@ export interface LoginLinkTokenPayload extends JwtTokenPayload {
   type: "login_link";
 }
 
+export interface EmailVerificationTokenPayload extends JwtTokenPayload {
+  type: "email_verification";
+}
+
 export interface LoginResponseData {
   token: string;
   user: Record<string, unknown>;

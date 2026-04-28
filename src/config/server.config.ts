@@ -22,6 +22,12 @@ const envSchema = Joi.object()
     DB_SYNC: Joi.boolean().default(false),
     JWT_SECRET: Joi.string().required(),
     JWT_EXPIRES_IN: Joi.string().default("7d"),
+    RESEND_API_KEY: Joi.string().allow("").optional(),
+    RESEND_EMAIL_FROM: Joi.string().email().default("onboarding@resend.dev"),
+    MAGIC_LINK_REDIRECT_URL: Joi.string().uri().default("http://localhost:5173/auth/magic-link"),
+    EMAIL_CONFIRMATION_REDIRECT_URL: Joi.string()
+      .uri()
+      .default("http://localhost:5173/auth/email-confirmation"),
     TRUST_PROXY: Joi.alternatives().try(Joi.boolean(), Joi.number().integer().min(0), Joi.string()),
     RATE_LIMIT_WINDOW_MS: Joi.number().default(15 * 60 * 1000),
     RATE_LIMIT_MAX_REQUESTS: Joi.number().default(300),
@@ -64,6 +70,19 @@ class ServerConfig {
   public JWT = {
     SECRET: environmentConfig.JWT_SECRET,
     EXPIRES_IN: environmentConfig.JWT_EXPIRES_IN,
+  };
+
+  public RESEND = {
+    API_KEY: environmentConfig.RESEND_API_KEY || "",
+    EMAIL_FROM: environmentConfig.RESEND_EMAIL_FROM,
+  };
+
+  public MAGIC_LINK = {
+    REDIRECT_URL: environmentConfig.MAGIC_LINK_REDIRECT_URL,
+  };
+
+  public EMAIL_CONFIRMATION = {
+    REDIRECT_URL: environmentConfig.EMAIL_CONFIRMATION_REDIRECT_URL,
   };
 
   public RATE_LIMIT = {

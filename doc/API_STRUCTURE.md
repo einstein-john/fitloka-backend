@@ -66,15 +66,40 @@ The JWT token contains the user ID, which is automatically extracted by the back
 
 ## Authentication Endpoints
 
-### Login
-- **POST** `/auth/login`
-- **Description**: Login with username and email to get JWT token. **Automatically creates a new user if they don't exist** (passwordless authentication).
+### Register
+- **POST** `/auth/register`
+- **Description**: Create a new account and send an email confirmation link.
 - **Auth**: API Key only
 - **Request Body**:
   ```json
   {
     "username": "string (required)",
-    "email": "string (valid email, required)"
+    "email": "string (valid email, required)",
+    "password": "string (min 8 chars, required)",
+    "firstName": "string (optional)",
+    "lastName": "string (optional)"
+  }
+  ```
+- **Behavior**:
+  - Account is created with `enabled: false`
+  - Verification email is sent via Resend
+  - User must confirm email before login succeeds
+
+### Confirm Email
+- **GET** `/auth/register/confirm-email?token=<token>`
+- **Description**: Confirms account email and enables login.
+- **Auth**: API Key only
+- **Query Parameters**: `token` (string) - verification token from email
+
+### Login
+- **POST** `/auth/login`
+- **Description**: Login with email and password to get JWT token.
+- **Auth**: API Key only
+- **Request Body**:
+  ```json
+  {
+    "email": "string (valid email, required)",
+    "password": "string (required)"
   }
   ```
 - **Response**:
@@ -91,18 +116,28 @@ The JWT token contains the user ID, which is automatically extracted by the back
     }
   }
   ```
-- **Behavior**:
-  - If user exists with matching username and email: Login and return token
-  - If user doesn't exist: Automatically create new user with provided username/email, then login
-  - New users are created with:
-    - `enabled: true`
-    - `isAdmin: false`
-    - All other fields set to `null` (can be updated later)
 - **Error Cases**:
-  - **409 Conflict**: If username exists with different email, or email exists with different username
-  - **401 Unauthorized**: If user account is disabled
+  - **401 Unauthorized**: Invalid credentials, disabled account, or unconfirmed email
 
-### Login with Magic Link (Future)
+### Request Magic Link
+- **POST** `/auth/login/magic-link/request`
+- **Description**: Sends a sign-in magic link to the user email using Resend
+- **Auth**: API Key only
+- **Request Body**:
+  ```json
+  {
+    "email": "john@example.com"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "message": "If that email exists, a magic link has been sent",
+    "data": {}
+  }
+  ```
+
+### Login with Magic Link
 - **GET** `/auth/login/magic-link?token=<token>`
 - **Description**: Login using a magic link token (for email-based authentication)
 - **Auth**: API Key only
@@ -767,6 +802,10 @@ Required environment variables:
 - `ALLOWED_ORIGINS`: Comma-separated list of allowed origins
 - `JWT_SECRET`: Secret key for JWT token signing (required)
 - `JWT_EXPIRES_IN`: JWT token expiration time (default: "7d")
+- `RESEND_API_KEY`: API key from Resend dashboard (required for magic-link emails)
+- `RESEND_EMAIL_FROM`: Verified sender email for Resend (default: `onboarding@resend.dev`)
+- `MAGIC_LINK_REDIRECT_URL`: Frontend URL that consumes `?token=...` for magic-link login
+- `EMAIL_CONFIRMATION_REDIRECT_URL`: Frontend URL that consumes `?token=...` for email confirmation
 
 ---
 
@@ -877,4 +916,4 @@ Consider implementing:
 7. Rate limiting per user
 8. Email verification for users
 9. Password reset functionality
-10. Magic link email implementation
+10. Magic link rate limiting by target email/IP
