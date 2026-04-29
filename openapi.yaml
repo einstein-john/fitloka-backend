@@ -7,7 +7,8 @@ info:
     **Auth flow:** `POST /auth/register` or `POST /auth/login` → use returned `token` with `Authorization: Bearer ...` on protected routes.  
     **API key:** create or use an `applications` row (e.g. from seeders); send `x-api-key` on every request except pure `/auth/*` and public `/` / `robots.txt`.
 
-    Admin-only actions require `users.isAdmin === true` on the JWT user.
+    **Shop / catalog (`GET /categories`, `GET /products`, `GET /inventory/...`):** API key only — no JWT.  
+    **Catalog writes** (`POST` / `PUT` / `PATCH` / `DELETE` on those resources): API key plus **admin** JWT (`users.isAdmin === true`).
   version: 1.0.0
 
 servers:
@@ -40,7 +41,9 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT from `POST /auth/login` or `POST /auth/register`
+      description: |
+        JWT from `POST /auth/login` or `POST /auth/register`.
+        **Admin** JWT required for `POST`/`PUT`/`PATCH`/`DELETE` on `/categories`, `/products`, `/inventory` (in addition to API key).
 
   schemas:
     ApiMessage:
@@ -617,7 +620,6 @@ paths:
       summary: List categories
       security:
         - ApiKeyAuth: []
-          BearerAuth: []
       parameters:
         - name: search
           in: query
@@ -673,7 +675,6 @@ paths:
       tags: [Categories]
       security:
         - ApiKeyAuth: []
-          BearerAuth: []
       responses:
         "200":
           description: Success
@@ -718,7 +719,6 @@ paths:
       summary: List products (paginated)
       security:
         - ApiKeyAuth: []
-          BearerAuth: []
       parameters:
         - name: page
           in: query
@@ -775,7 +775,6 @@ paths:
       summary: Get product (includes category, inventory, images)
       security:
         - ApiKeyAuth: []
-          BearerAuth: []
       responses:
         "200":
           description: Success
@@ -877,7 +876,6 @@ paths:
       tags: [Inventory]
       security:
         - ApiKeyAuth: []
-          BearerAuth: []
       responses:
         "200":
           description: Success

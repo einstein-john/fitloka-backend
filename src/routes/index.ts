@@ -5,6 +5,7 @@ import serverConfig from "../config/server.config";
 import systemMiddleware from "../middlewares/system.middleware";
 import apiKeyAuthMiddleware from "../middlewares/api-key-auth.middleware";
 import jwtAuthMiddleware from "../middlewares/jwt-auth.middleware";
+import catalogAuthMiddleware from "../middlewares/catalog-auth.middleware";
 
 import applicationRoute from "./application.route";
 import robotsRoute from "./robots.route";
@@ -51,10 +52,12 @@ class Routes {
 
     const protectedChain = [apiKeyAuthMiddleware.validateApiKey, jwtAuthMiddleware.validateToken];
 
+    const catalogChain = [catalogAuthMiddleware.requireApiKeyWithOptionalJwt];
+
     this.router.use("/users", ...protectedChain, userRoute);
-    this.router.use("/categories", ...protectedChain, categoryRoute);
-    this.router.use("/products", ...protectedChain, productRoute);
-    this.router.use("/inventory", ...protectedChain, inventoryRoute);
+    this.router.use("/categories", ...catalogChain, categoryRoute);
+    this.router.use("/products", ...catalogChain, productRoute);
+    this.router.use("/inventory", ...catalogChain, inventoryRoute);
     this.router.use("/cart", ...protectedChain, cartRoute);
     this.router.use("/orders", ...protectedChain, orderRoute);
     this.router.use("/payments", apiKeyAuthMiddleware.validateApiKey, paymentRoute);
