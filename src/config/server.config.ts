@@ -33,6 +33,12 @@ const envSchema = Joi.object()
     RATE_LIMIT_MAX_REQUESTS: Joi.number().default(300),
     AUTH_RATE_LIMIT_WINDOW_MS: Joi.number().default(15 * 60 * 1000),
     AUTH_RATE_LIMIT_MAX_REQUESTS: Joi.number().default(20),
+    CLOUDINARY_CLOUD_NAME: Joi.string().allow("").optional(),
+    CLOUDINARY_API_KEY: Joi.string().allow("").optional(),
+    CLOUDINARY_API_SECRET: Joi.string().allow("").optional(),
+    CLOUDINARY_FOLDER_PRODUCTS: Joi.string().default("fitloka/products"),
+    CLOUDINARY_FOLDER_PROFILES: Joi.string().default("fitloka/profiles"),
+    UPLOAD_MAX_IMAGE_BYTES: Joi.number().default(5 * 1024 * 1024),
   })
   .unknown();
 
@@ -93,6 +99,21 @@ class ServerConfig {
   };
 
   public TRUST_PROXY = environmentConfig.TRUST_PROXY ?? false;
+
+  public CLOUDINARY = {
+    CLOUD_NAME: environmentConfig.CLOUDINARY_CLOUD_NAME || "",
+    API_KEY: environmentConfig.CLOUDINARY_API_KEY || "",
+    API_SECRET: environmentConfig.CLOUDINARY_API_SECRET || "",
+    FOLDER_PRODUCTS: environmentConfig.CLOUDINARY_FOLDER_PRODUCTS,
+    FOLDER_PROFILES: environmentConfig.CLOUDINARY_FOLDER_PROFILES,
+    MAX_IMAGE_BYTES: environmentConfig.UPLOAD_MAX_IMAGE_BYTES,
+  };
+
+  public get cloudinaryConfigured(): boolean {
+    return Boolean(
+      this.CLOUDINARY.CLOUD_NAME && this.CLOUDINARY.API_KEY && this.CLOUDINARY.API_SECRET
+    );
+  }
 }
 
 export default new ServerConfig();

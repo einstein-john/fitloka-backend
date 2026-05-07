@@ -6,6 +6,7 @@ import {
   productImageRepository,
   productRepository,
 } from "../repositories";
+import cloudinaryService from "./cloudinary.service";
 import type { ProductStatus } from "../types/catalog.types";
 import type { ReqQueryOptions } from "../types/general.interface";
 
@@ -117,7 +118,15 @@ class ProductService {
     if (!link) {
       throw new NotFoundError("Product image link not found");
     }
+    const { imageId } = link;
+    const imageRow = await productImageRepository.findImageById(imageId);
+    const urlForCleanup = imageRow?.url ?? null;
     await productImageRepository.remove(productImageId, productId);
+    const remaining = await productImageRepository.countLinksByImageId(imageId);
+    if (remaining === 0 && urlForCleanup) {
+      await productImageRepository.deleteImageRow(imageId);
+      cloudinaryService.scheduleDestroyBySecureUrl(urlForCleanup);
+    }
     return productRepository.findById(productId);
   }
 }

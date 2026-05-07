@@ -1,6 +1,7 @@
 import { NextFunction, Response } from "express";
 import userService from "../services/user.service";
 import authService from "../services/auth.service";
+import cloudinaryService from "../services/cloudinary.service";
 import serverConfig from "../config/server.config";
 import { AuthenticatedUserRequest } from "../types";
 import { UserAttributes } from "../types/user.interface";
@@ -23,6 +24,44 @@ export default class UserController {
       });
     } catch (error) {
       serverConfig.DEBUG(`Error fetching current user: ${JSON.stringify(error)}`);
+      next(error);
+    }
+  }
+
+  protected async uploadProfilePicture(
+    req: AuthenticatedUserRequest & { file?: Express.Multer.File },
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!req.userId) {
+        res.status(401).json({ message: "User authentication required" });
+        return;
+      }
+      const previousPicture =
+        req.user?.getDataValue?.("profilePicture") ??
+        (req.user as { profilePicture?: string | null })?.profilePicture ??
+        null;
+      const file = req.file;
+      if (!file?.buffer?.length) {
+        res.status(400).json({ message: "Image file is required", data: {} });
+        return;
+      }
+      const { secureUrl } = await cloudinaryService.uploadImageBuffer(
+        file.buffer,
+        serverConfig.CLOUDINARY.FOLDER_PROFILES
+      );
+      await userService.updateUser(req.userId, { profilePicture: secureUrl });
+      const updatedUser = await userService.getUserById(req.userId);
+      res.status(200).json({
+        message: "Profile picture updated",
+        data: updatedUser ? authService.sanitizeUser(updatedUser) : null,
+      });
+      if (previousPicture && previousPicture !== secureUrl) {
+        cloudinaryService.scheduleDestroyBySecureUrl(previousPicture);
+      }
+    } catch (error) {
+      serverConfig.DEBUG(`Error uploading profile picture: ${JSON.stringify(error)}`);
       next(error);
     }
   }

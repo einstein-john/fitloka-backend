@@ -1,8 +1,27 @@
 import { NextFunction, Response } from "express";
 import serverConfig from "../config/server.config";
 import productService from "../services/product.service";
+import cloudinaryService from "../services/cloudinary.service";
 import type { AuthenticatedUserRequest } from "../types";
 import type { ReqQueryOptions } from "../types/general.interface";
+
+function parseMultipartImageOptions(body: Record<string, unknown>): {
+  altText: string | null;
+  sortOrder: number;
+  isPrimary: boolean;
+} {
+  const altRaw = body.altText;
+  const altText =
+    typeof altRaw === "string" && altRaw.trim().length > 0 ? altRaw.trim() : null;
+  let sortOrder = 0;
+  if (body.sortOrder != null && body.sortOrder !== "") {
+    const n = Number(body.sortOrder);
+    if (Number.isFinite(n) && n >= 0) sortOrder = Math.floor(n);
+  }
+  const p = body.isPrimary;
+  const isPrimary = p === true || p === "true" || p === "1" || p === 1;
+  return { altText, sortOrder, isPrimary };
+}
 
 export default class ProductController {
   protected async list(
@@ -93,6 +112,35 @@ export default class ProductController {
       res.status(201).json({ message: "Image linked to product", data: row });
     } catch (error) {
       serverConfig.DEBUG(`product attach image: ${JSON.stringify(error)}`);
+      next(error);
+    }
+  }
+
+  protected async uploadProductImage(
+    req: AuthenticatedUserRequest & { file?: Express.Multer.File },
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const file = req.file;
+      if (!file?.buffer?.length) {
+        res.status(400).json({ message: "Image file is required", data: {} });
+        return;
+      }
+      const { secureUrl } = await cloudinaryService.uploadImageBuffer(
+        file.buffer,
+        serverConfig.CLOUDINARY.FOLDER_PRODUCTS
+      );
+      const opts = parseMultipartImageOptions(req.body as Record<string, unknown>);
+      const row = await productService.attachImage(Number(req.params.id), {
+        url: secureUrl,
+        altText: opts.altText,
+        sortOrder: opts.sortOrder,
+        isPrimary: opts.isPrimary,
+      });
+      res.status(201).json({ message: "Image uploaded and linked to product", data: row });
+    } catch (error) {
+      serverConfig.DEBUG(`product upload image: ${JSON.stringify(error)}`);
       next(error);
     }
   }

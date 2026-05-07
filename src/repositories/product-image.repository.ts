@@ -9,6 +9,10 @@ class ProductImageRepository implements IProductImageRepository {
     return Image.findOne({ where: { url } });
   }
 
+  async findImageById(id: number): Promise<ImageInstance | null> {
+    return Image.findByPk(id);
+  }
+
   async createImage(url: string, altText: string | null): Promise<ImageInstance> {
     return Image.create({ url, altText });
   }
@@ -50,6 +54,14 @@ class ProductImageRepository implements IProductImageRepository {
 
   async remove(productImageId: number, productId: number): Promise<number> {
     return ProductImage.destroy({ where: { id: productImageId, productId } });
+  }
+
+  async countLinksByImageId(imageId: number): Promise<number> {
+    return ProductImage.count({ where: { imageId } });
+  }
+
+  async deleteImageRow(imageId: number): Promise<number> {
+    return Image.destroy({ where: { id: imageId } });
   }
 }
 

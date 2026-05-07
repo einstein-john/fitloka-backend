@@ -45,6 +45,42 @@ components:
         JWT from `POST /auth/login` or `POST /auth/register`.
         **Admin** JWT required for `POST`/`PUT`/`PATCH`/`DELETE` on `/categories`, `/products`, `/inventory` (in addition to API key).
 
+  parameters:
+    PathId:
+      name: id
+      in: path
+      required: true
+      description: "Resource id (use e.g. 1 in examples)"
+      schema:
+        type: integer
+        minimum: 1
+        example: 1
+    PathProductId:
+      name: productId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+        example: 1
+    PathProductImageId:
+      name: productImageId
+      in: path
+      required: true
+      description: "product_images.id (e.g. 1)"
+      schema:
+        type: integer
+        minimum: 1
+        example: 1
+    PathCartItemId:
+      name: itemId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+        example: 1
+
   schemas:
     ApiMessage:
       type: object
@@ -168,6 +204,7 @@ components:
         categoryId:
           type: integer
           minimum: 1
+          example: 1
         name:
           type: string
         sku:
@@ -187,6 +224,7 @@ components:
           type: integer
           minimum: 0
           default: 0
+          example: 1
 
     ProductUpdate:
       type: object
@@ -194,6 +232,7 @@ components:
         categoryId:
           type: integer
           minimum: 1
+          example: 1
         name:
           type: string
         sku:
@@ -226,6 +265,7 @@ components:
           type: integer
           minimum: 0
           default: 0
+          example: 1
         isPrimary:
           type: boolean
           default: false
@@ -237,6 +277,7 @@ components:
         stock:
           type: integer
           minimum: 0
+          example: 1
 
     CartAddItem:
       type: object
@@ -245,10 +286,12 @@ components:
         productId:
           type: integer
           minimum: 1
+          example: 1
         quantity:
           type: integer
           minimum: 1
           default: 1
+          example: 1
 
     CartItemQuantity:
       type: object
@@ -257,6 +300,7 @@ components:
         quantity:
           type: integer
           minimum: 1
+          example: 1
 
     PaymentCheckout:
       type: object
@@ -265,6 +309,7 @@ components:
         orderId:
           type: integer
           minimum: 1
+          example: 1
 
     PaymentWebhook:
       type: object
@@ -273,6 +318,7 @@ components:
         orderId:
           type: integer
           minimum: 1
+          example: 1
         status:
           type: string
           enum: [completed, pending, failed]
@@ -496,11 +542,7 @@ paths:
 
   /applications/{id}:
     parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
+      - $ref: "#/components/parameters/PathId"
     get:
       tags: [Applications]
       security:
@@ -561,13 +603,42 @@ paths:
         "401":
           description: Missing or invalid token
 
+  /users/me/profile-picture:
+    post:
+      tags: [Users]
+      summary: Upload profile picture via Cloudinary
+      description: multipart field name `image` (image/*). Requires Cloudinary env vars on the server.
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: User with updated profilePicture URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+        "400":
+          description: No file or invalid file
+        "401":
+          description: Missing or invalid token
+        "503":
+          description: Cloudinary not configured
+
   /users/{id}:
     parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
+      - $ref: "#/components/parameters/PathId"
     get:
       tags: [Users]
       summary: Get user by id (self or admin)
@@ -629,12 +700,16 @@ paths:
           in: query
           schema:
             type: integer
+            minimum: 1
             default: 1
+            example: 1
         - name: limit
           in: query
           schema:
             type: integer
+            minimum: 1
             default: 10
+            example: 1
       responses:
         "200":
           description: Success
@@ -666,11 +741,7 @@ paths:
 
   /categories/{id}:
     parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
+      - $ref: "#/components/parameters/PathId"
     get:
       tags: [Categories]
       security:
@@ -724,10 +795,16 @@ paths:
           in: query
           schema:
             type: integer
+            minimum: 1
+            default: 1
+            example: 1
         - name: limit
           in: query
           schema:
             type: integer
+            minimum: 1
+            default: 10
+            example: 1
         - name: search
           in: query
           schema:
@@ -736,6 +813,8 @@ paths:
           in: query
           schema:
             type: integer
+            minimum: 1
+            example: 1
       responses:
         "200":
           description: items, total, page, limit
@@ -765,11 +844,7 @@ paths:
 
   /products/{id}:
     parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
+      - $ref: "#/components/parameters/PathId"
     get:
       tags: [Products]
       summary: Get product (includes category, inventory, images)
@@ -812,6 +887,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiEnvelope"
 
+  /products/{id}/images/upload:
+    post:
+      tags: [Products]
+      summary: Upload product image file to Cloudinary and link (admin)
+      security:
+        - ApiKeyAuth: []
+          BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PathId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                altText:
+                  type: string
+                sortOrder:
+                  type: integer
+                  minimum: 0
+                  example: 1
+                isPrimary:
+                  type: boolean
+      responses:
+        "201":
+          description: Product with new image
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope"
+        "503":
+          description: Cloudinary not configured
+
   /products/{id}/images:
     post:
       tags: [Products]
@@ -820,11 +933,7 @@ paths:
         - ApiKeyAuth: []
           BearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: "#/components/parameters/PathId"
       requestBody:
         required: true
         content:
@@ -847,16 +956,8 @@ paths:
         - ApiKeyAuth: []
           BearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: productImageId
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: "#/components/parameters/PathId"
+        - $ref: "#/components/parameters/PathProductImageId"
       responses:
         "200":
           description: Success
@@ -867,11 +968,7 @@ paths:
 
   /inventory/{productId}:
     parameters:
-      - name: productId
-        in: path
-        required: true
-        schema:
-          type: integer
+      - $ref: "#/components/parameters/PathProductId"
     get:
       tags: [Inventory]
       security:
@@ -939,11 +1036,7 @@ paths:
 
   /cart/items/{itemId}:
     parameters:
-      - name: itemId
-        in: path
-        required: true
-        schema:
-          type: integer
+      - $ref: "#/components/parameters/PathCartItemId"
     patch:
       tags: [Cart]
       security:
@@ -1000,10 +1093,16 @@ paths:
           in: query
           schema:
             type: integer
+            minimum: 1
+            default: 1
+            example: 1
         - name: limit
           in: query
           schema:
             type: integer
+            minimum: 1
+            default: 10
+            example: 1
       responses:
         "200":
           description: Success
@@ -1020,11 +1119,7 @@ paths:
         - ApiKeyAuth: []
           BearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: "#/components/parameters/PathId"
       responses:
         "200":
           description: Success

@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import ProductController from "../controllers/product.controller";
 import validationMiddleware from "../middlewares/validation.middleware";
 import adminMiddleware from "../middlewares/admin.middleware";
+import uploadMiddleware from "../middlewares/upload.middleware";
 import {
   ProductAttachImageSchema,
   ProductCreateSchema,
@@ -68,6 +69,13 @@ class ProductRoute extends ProductController {
       adminMiddleware.requireAdmin,
       validationMiddleware.validate(new ProductCreateSchema()),
       this.create
+    );
+    this.router.post(
+      "/:id/images/upload",
+      adminMiddleware.requireAdmin,
+      this.validateId,
+      uploadMiddleware.parseProductImage,
+      this.uploadProductImage
     );
     this.router.post(
       "/:id/images",

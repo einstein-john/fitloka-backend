@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import UserController from "../controllers/user.controller";
 import { UserSchema } from "../schemas";
 import { ApiValidationErrorResponse } from "../types";
+import uploadMiddleware from "../middlewares/upload.middleware";
 
 class UserRoute extends UserController {
   public router: Router;
@@ -16,6 +17,11 @@ class UserRoute extends UserController {
 
   private routes(): void {
     this.router.get("/me", this.getCurrentUser);
+    this.router.post(
+      "/me/profile-picture",
+      uploadMiddleware.parseProfileImage,
+      this.uploadProfilePicture
+    );
     this.router.get("/:id", this.validateParams, this.getUser);
     this.router.put("/:id", this.validateParams, this.validateUpdate, this.updateUser);
     this.router.delete("/:id", this.validateParams, this.deleteUser);

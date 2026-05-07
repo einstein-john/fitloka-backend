@@ -3,6 +3,7 @@ import type { ProductImageInstance } from "../../database/models/ProductImage";
 
 export interface IProductImageRepository {
   findImageByUrl(url: string): Promise<ImageInstance | null>;
+  findImageById(id: number): Promise<ImageInstance | null>;
   createImage(url: string, altText: string | null): Promise<ImageInstance>;
   findOrCreateImage(url: string, altText: string | null): Promise<ImageInstance>;
   findExistingLink(productId: number, imageId: number): Promise<ProductImageInstance | null>;
@@ -18,4 +19,6 @@ export interface IProductImageRepository {
     productId: number
   ): Promise<ProductImageInstance | null>;
   remove(productImageId: number, productId: number): Promise<number>;
+  countLinksByImageId(imageId: number): Promise<number>;
+  deleteImageRow(imageId: number): Promise<number>;
 }
